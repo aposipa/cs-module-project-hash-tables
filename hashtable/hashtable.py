@@ -7,6 +7,43 @@ class HashTableEntry:
         self.value = value
         self.next = None
 
+# class LinkedList:
+#     def __init__(self):
+#         self.head = None
+
+#     def get(self, key):
+#         current = self.head
+
+#         while current is not None:
+#             if current.key == key:
+#                 return current
+#             current = current.next
+
+#         return current
+
+#     def add_to_head(self, key, value):
+#         current = self.head
+#         while current is not None:
+#             if current.key == key:
+#                 current.value = value
+#                 return
+#             current = current.next
+
+#         new_node = HashTableEntry(key, value)
+#         new_node.next = self.head
+#         self.head = new_node
+
+#     def add_to_tail(self, key, value)
+#         current = self.tail
+#         while current is not None:
+#             if current.key == key:
+#                 current.value = value
+#                 return
+#             current = current.next
+
+#         new_node = HashTableEntry(key, value)
+#         new_node.next = self.tail
+#         self.tail = new_node
 
 # Hash table can't have fewer than this many slots
 MIN_CAPACITY = 8
@@ -23,7 +60,7 @@ class HashTable:
     def __init__(self, capacity):
         # Your code here
         self.capacity = capacity
-        self.list = [None] * capacity
+        self.new_list = [None] * capacity
 
 
     def get_num_slots(self):
@@ -37,7 +74,7 @@ class HashTable:
         Implement this.
         """
         # Your code here
-        return self.capacity
+        return len(self.new_list)
 
     def get_load_factor(self):
         """
@@ -46,7 +83,15 @@ class HashTable:
         Implement this.
         """
         # Your code here
-        pass
+        num_items = 0
+        for i in self.new_list:
+            if i:
+                current = i
+                num_items += 1
+                while current.next:
+                    num_items += 1
+                    current = current.next
+        return num_items / len(self.new_list)
 
     def fnv1(self, key):
         """
@@ -68,6 +113,7 @@ class HashTable:
         hash = 5381
         for x in key:
             hash = ((hash << 5) + hash) + ord(x)
+            hash = hash % self.capacity
 
         return hash
 
@@ -88,7 +134,23 @@ class HashTable:
         Implement this.
         """
         # Your code here
-        self.list[self.hash_index(key)] = value
+        # self.new_list[self.hash_index(key)] = value
+        new_index = self.hash_index(key)
+        current = self.new_list[new_index]
+
+        if current:
+            while current:
+                if current.key == key:
+                    current.value = value
+                    return
+                if current.next:
+                    current = current.next
+                else:
+                    current.next = HashTableEntry(key, value)
+        else:
+            self.new_list[new_index] = HashTableEntry(key, value)
+        if self.get_load_factor() >= 0.7:
+            self.resize(self.capacity * 2)
 
 
     def delete(self, key):
@@ -100,7 +162,23 @@ class HashTable:
         Implement this.
         """
         # Your code here
-        self.list[self.hash_index(key)] = None
+        # self.new_list[self.hash_index(key)] = None
+        new_index = self.hash_index(key)
+        current = self.new_list[new_index]
+
+        if current:
+            while current:
+                if current.key == key:
+                    self.new_list[new_index] = current.next
+                    if self.capacity > 16:
+                        self.resize(self.capacity / 2)
+                    return
+                elif current.next:
+                    current = current.next
+                else:
+                    return
+        else:
+            return
 
     def get(self, key):
         """
@@ -111,7 +189,16 @@ class HashTable:
         Implement this.
         """
         # Your code here
-        return self.list[self.hash_index(key)]
+        # return self.new_list[self.hash_index(key)]
+        if self.new_list[self.hash_index(key)]:
+            current = self.new_list[self.hash_index(key)]
+            while current.next:
+                if current.key == key:
+                    return current.value
+                current = current.next
+            if current.key == key:
+                return current.value
+        return
 
     def resize(self, new_capacity):
         """
@@ -121,6 +208,17 @@ class HashTable:
         Implement this.
         """
         # Your code here
+        old_list = self.new_list
+        self.new_list = [None] * new_capacity
+        self.capacity = new_capacity
+        
+        for i in old_list:
+            if i:
+                self.new_list[self.djb2(i.key)] = i
+                current = i.next
+                while current:
+                    self.new_list[self.djb2(current.key)] = current
+                    current = current.next
 
 
 
